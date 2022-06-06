@@ -1,0 +1,1395 @@
+{% extends 'index.html' %}
+
+
+{% block title %}
+<h2>My Own Bot</h2>
+{% endblock %}
+
+{% block content %}
+
+{% if user.is_authenticated %}
+
+<body>
+<div id="app" class="test">
+    <!--[[message]]-->
+    <principalcomponent></principalcomponent> 
+</div>
+</body>
+
+</div>
+
+
+<script type="module">
+
+        var coinpairs = []; // Used in the 1st pop-up
+        
+
+         function readCsv() { 
+            var str = ""
+                fetch("../coinpairs.csv")
+            .then(response => response.text())
+            .then(data => { 
+             
+              const lines = data.split("\n");
+              
+              for (let i = 1; i < lines.length-1; i++) {
+                  coinpairs[i-1] = lines[i].split(",")[1];
+              }
+              console.log(coinpairs);
+
+            } ) } ;
+
+        window.onload = readCsv;
+
+  /* ---------------------------------- */
+  /* --- Symbol Selection Component --- */
+  /* ---------------------------------- */
+
+  var symbolcomponent = Vue.component('symbolcomponent',{
+    name:'symbolcomponent',
+    delimiters:['[[',']]'],
+    props:['title'],
+    template:
+    `
+    <div class="optionSwitch1" >
+          <select v-bind:id="'valueSymbol'+title" style="width:110px;margin-top: 25px; margin-bottom: 15px;">
+              <option value=">" selected>></option>
+              <option value=">=">>=</option>
+              <option value="<"><</option>
+              <option value="<="><=</option>
+              <option value="!=">=</option>
+              <option value="!=">!=</option>
+            </select>
+        <div class="selectionPopup" style="margin-top: 5px; width: 280px;">
+            <numberinputcomponent v-bind:title="this.title" val="10" min="1" max="10000000"></numberinputcomponent>                
+        </div>   
+    </div>    
+    `
+  })
+
+  /* ------------------------------ */
+  /* --- Number Input Component --- */
+  /* ------------------------------ */
+
+  var numberinputcomponent = Vue.component('numberinputcomponent',{
+    name:'numberinputcomponent',
+    delimiters:['[[',']]'],
+    props: ['title', 'min', 'max','val'],
+    template: 
+    `
+    <div style="padding: 8px 16px;">
+    <div> [[title]] </div> 
+    <div class="vs-input-number vs-input-number-size-null vs-input-number-primary" style="background-color:white; height:20px;width:100px;">
+      <button type="button" class="btn-less vs-input-number--button-less" v-on:click="decreaseValue();">
+      <i class="vs-icon notranslate icon-scale material-icons null">-</i></button>
+      <input  min="this.min"  max="this.max" step="1" v-bind:id="'valueInput'+title" v-bind:value="this.valInput" class="valueInput">
+      <button type="button" class="btn-plus vs-input-number--button-plus" v-on:click="increaseValue();">
+      <i class="vs-icon notranslate icon-scale material-icons null">+</i></button>
+    </div> 
+    </div>
+    `,
+    methods:{
+    increaseValue(){
+          var el = document.getElementById("valueInput"+this.title).value;
+          this.valInput = el;
+          this.valInput++;
+          if(this.valInput>this.max){
+            alert("The value must be between " + this.min + " and " + this.max);
+            this.valInput = this.max;
+          }
+        },
+      decreaseValue(){
+          var el = document.getElementById("valueInput"+this.title).value;
+          this.valInput = el;
+          this.valInput--;
+          if(this.valInput<this.min){
+            alert("The value must be between " + this.min + " and " + this.max);
+            this.valInput = this.min;
+          }
+      }
+    },
+    
+    
+    data(){
+      return{
+        valInput:this.val
+      }
+    }
+    
+  }) 
+
+  /* ----------------------- */
+  /* --- Popup Component --- */
+  /* ----------------------- */
+
+  var popupcomponent = Vue.component('popupcomponent',{
+    name:'popupcomponent',
+    delimiters:['[[',']]'],
+    props: ['title', 'popupType','selectionList'],
+    component: {'numberinputcomponent': numberinputcomponent},
+    template:
+    `
+    <div class="centerx">
+
+    <!-- IF THE USER NEEDS TO ENTER AN INPUT --> 
+
+    <div v-if="popupType === 'input'">
+    <vs-popup class="holamundo"  v-bind:title="title" :active.sync="isActive">
+      <center>
+        <div class="selectionPopup">
+          <div  style="font-size: 17px;"> Amount Type </div>
+            <!-- div class="v-application" -->
+              <v-btn-toggle tile color="blue darken-4" group>
+              <v-btn v-model="switchVolume" v-on:click="volume()">  📈 Volume </v-btn>
+              <v-btn v-model="switchPrice" v-on:click="price()"> 💵 Price </v-btn>
+              </v-btn-toggle>
+            <!-- /div -->
+        </div>
+
+        <div>
+        <div v-if="switchVolume" style="font-size: 17px; width: 280px;">
+          <div>
+          <vs-input label-placeholder="Enter a percentage" v-model="inputValue"/>
+          </div>        
+          </div>
+
+        <div v-if="switchPrice" style="font-size: 17px; width: 280px;">
+          <div>
+          <vs-input label-placeholder="Enter a value" v-model="inputValue"/>
+          </div>
+        </div>
+        
+        </div>
+        
+        <div style="padding:2% 0">
+        <vs-button v-on:click="confirmInput()" color="primary" type="border">Confirm
+          </vs-button>
+        </div>
+
+      </center>
+      </vs-popup>
+    </div>
+
+
+
+    <!-- OPTION POPUP -->
+    <div v-if="popupType === 'option'">
+      <vs-popup class="holamundo"  v-bind:title="title" :active.sync="isActive">
+        <center>
+      <div>
+        <div class="selectionPopup">        
+          <div style="font-size: 17px;"> Action type </div>
+
+          <v-btn-toggle   v-model="textOption"  tile  color="deep-purple accent-3" group>
+            <v-btn v-on:click="setTypeActionOption('buy')">  Buy  </v-btn>
+            <v-btn v-on:click="setTypeActionOption('sell')"> Sell </v-btn>
+          </v-btn-toggle>
+
+        </div>
+       
+        <div class="selectionPopup">
+          <div  style="font-size: 17px;"> Amount Type </div>
+            <!-- div class="v-application" -->
+              <v-btn-toggle tile color="blue darken-4" group>
+              <v-btn v-model="switchVolumeOption" v-on:click="volumeOption()">  📈 Volume </v-btn>
+              <v-btn v-model="switchPriceOption" v-on:click="priceOption()"> 💵 Price </v-btn>
+              </v-btn-toggle>
+            <!-- /div -->
+        </div>
+
+        <div>
+        <div v-if="switchVolumeOption" style="font-size: 17px; width: 280px;">
+          <div>
+          <vs-input label-placeholder="Enter a percentage" v-model="inputValueOption"/>
+          </div>        
+          </div>
+
+        <div v-if="switchPriceOption" style="font-size: 17px; width: 280px;">
+          <div>
+          <vs-input label-placeholder="Enter a value" v-model="inputValueOption"/>
+          </div>
+        </div>
+        
+        </div>
+
+        <div class="choiceOption" style="  height: auto;">
+          <center>
+          <numberinputcomponent title="Profit" val="0" min="0" max="100000000"></numberinputcomponent>
+          <numberinputcomponent title="Stop Loss" val="0" min="0" max="100000000"></numberinputcomponent>
+          </center>
+        </div>
+
+        <div style="padding:2% 0">
+        <vs-button v-on:click="confirmOption()" color="primary" type="border">Confirm</vs-button>
+      </div>
+      <div style="padding:2% 0">
+        <vs-button v-on:click="clearOption()" color="danger" type="border">Clear</vs-button>
+      </div>
+
+        </div>
+        </center>
+      </vs-popup>
+    </div>
+
+
+    <!-- IF THE USER NEEDS TO CHOOSE IN A LIST --> 
+
+    <div v-if="popupType === 'selection'">
+    <vs-popup class="holamundo"  v-bind:title="title" :active.sync="isActive">
+    <center>
+      
+      <div>
+        <vs-input label-placeholder="Select or type a coinpair" id="search" name="search" v-model="inputValueCurr" v-on:keyup="filter()" />
+
+        <div style="height : 10px"></div>
+        <ul v-bind:id="'selectionMenu'+title">
+          <li  v-for="item in selectionList"  v-bind:value="item"><a href="#" v-on:click="updateFilter(item)">[[item]]</a></li>
+        </ul>
+      </div>
+      <div style="padding:2% 0">
+        <vs-button v-on:click="confirmMenu()" color="primary" type="border">Confirm</vs-button>
+      </div>
+    </center>
+    </vs-popup>
+    </div>
+
+   <!-- CRITERION POPUP -->
+    <div v-if="popupType === 'criterion'">
+    <vs-popup class="holamundo"  v-bind:title="title" :active.sync="isActive">
+    <center>
+      <div class="popupCriterion">
+        <div class="timeUnit">
+          <div style="font-size: 17px;"> ⏱ Time Unit </div>
+          <div>
+            <select id='selectionMenuTime'>
+              <option value="1m">1m</option>
+              <option value="5m">5m</option>
+              <option value="15m">15m</option>
+              <option value="30m">30m</option>
+              <option value="1h" selected>1h</option>
+              <option value="2h">2h</option>
+              <option value="4h">4h</option>
+              <option value="6h">6h</option>
+              <option value="12h">12h</option>
+              <option value="1d">1d</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="choiceCriterion">
+          <v-btn-toggle tile color="deep-purple accent-3"  group>
+          
+          <v-btn v-model="switch1" v-on:click="indicator()">  📈 Indicator </v-btn>
+  
+          <v-btn v-model="switch2" v-on:click="symbols()"> 📐 Symbol </v-btn>
+          </v-btn-toggle>
+        </div>
+
+      </div>
+
+
+      <div v-if="switch1" style="font-size: 17px; width: 280px;">
+        <center>
+        <div>
+          <div class="optionSwitch1" style="margin-top: 15px;">
+            <select id='selectionIndicator'>
+              <option disabled selected>Select an Indicator </option>
+              <option value="MA" v-on:click="isMA()">MA</option>
+              <option value="MACD" v-on:click="isMACD()">MACD</option>
+              <option value="RSI" v-on:click="isRSI()">RSI</option>
+              <option value="Stochastic RSI" v-on:click="isSTOCRSI()">Stochastic RSI</option>
+              <option value="Bollinger Bands" v-on:click="isBOLLINGER()">Bollinger Bands</option>
+            </select>
+          </div>
+
+          <!-- MA --> 
+
+          <div v-if="ma" style="margin-top:10px;">
+            <div class="choicePeriodMARsi">
+              <div>
+              <numberinputcomponent title="Period" val="9" min="1" max="200"></numberinputcomponent>
+              <symbolcomponent title="MA Value"></symbolcomponent>
+              <div style="padding:3% 0; width: 305px;">
+                <vs-button v-on:click="confirmMA()" color="primary" type="border">Confirm</vs-button>
+              </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RSI -->
+
+          <div v-if="rsi" style="margin-top:10px;">
+            <div class="choicePeriodMARsi">
+              <div>
+              <numberinputcomponent title="Period" val="9" min="1" max="200"></numberinputcomponent>
+              <symbolcomponent title="RSI Value"></symbolcomponent>
+              <div style="padding:3% 0; width: 305px;">
+                <vs-button v-on:click="confirmRsi()" color="primary" type="border">Confirm</vs-button>
+              </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MACD --> 
+          <div v-if="macd" class="MACD">
+
+            <div class="selectionPopup" style="width:305px;">
+              <div style="font-size: 17px;"> Line </div>
+              <v-btn-toggle tile color="deep-purple accent-3"  group>
+                <v-btn v-model="switchMacdLine1" v-on:click="macdLine()">  Line </v-btn>
+                <v-btn v-model="switchMacdLine2" v-on:click="macdSignalLine()">  Signal </v-btn>
+                <v-btn v-model="switchMacdLine3" v-on:click="macdHistogram()">  Histogram </v-btn>
+              </v-btn-toggle>
+            </div>
+            
+
+            <div class="selectionPopup" style="height:auto; width:305px;">
+              <center>
+                <numberinputcomponent title="Short Term Period" val="12" min="1" max="200"></numberinputcomponent>                
+                <numberinputcomponent title="Long Term Period"  val="26" min="1" max="200"></numberinputcomponent>                
+                <numberinputcomponent title="Signal Term Period" val="9" min="1" max="200"></numberinputcomponent>
+              </center>
+            </div>
+
+            <symbolcomponent title="MACD Value"></symbolcomponent>
+                   
+
+            <div style="padding:3% 0; width: 305px;">
+              <vs-button v-on:click="confirmMACD()" color="primary" type="border">Confirm</vs-button>
+            </div>
+          </div>
+
+          <!-- STOCHASTIC RSI -->
+          <div v-if="stocRsi" class="stocRsi">
+
+
+            <div class="selectionPopup" style="width: 305px;">
+              <div style="font-size: 17px;"> Line </div>
+              <v-btn-toggle tile color="deep-purple accent-3"  group>
+                <v-btn v-model="switchStocRsiLine1" v-on:click="DLine()">  D </v-btn>
+                <v-btn v-model="switchStocRsiLine2" v-on:click="KLine()">  K </v-btn>
+              </v-btn-toggle>
+            </div>
+
+            <div class="choiceStocRsi">
+              <center>
+                <numberinputcomponent title="Length RSI" val="14" min="1" max="200"></numberinputcomponent>
+                <numberinputcomponent title="Length Stoch" val="14" min="1" max="200"></numberinputcomponent>
+                <numberinputcomponent title="Smooth K" val="3" min="1" max="200"></numberinputcomponent>
+                <numberinputcomponent title="Smooth D" val="3" min="1" max="200"></numberinputcomponent>
+
+              </center>
+            </div>
+
+            <symbolcomponent title="Stochastic RSI Value"></symbolcomponent>
+
+
+            
+          <center>   
+            <div style="padding:3% 0; width: 305px;">
+            <vs-button  v-on:click="confirmStocRsi()" color="primary" type="border">Confirm</vs-button>
+            </div>
+          </center>
+          </div>
+        </div>
+
+        </center>
+      </div>
+
+
+      <div v-if="switch2" style="font-size: 17px; width: 300px;">
+        <div>
+          <div class="optionSwitch2" style="margin-top: 15px;">
+          <select id='selectionSymbol'>
+              <option disabled selected>Select a Symbol </option>
+              <option v-for="item in symbolList" v-on:click="isSymbol()" v-bind:value="item">[[item]]</option>
+            </select>
+            </div>
+        </div>      
+
+        <div v-if="this.symbol">
+        <div class="choicePeriodMARsi" style="margin-top: 15px; width:auto;">
+              <center>
+                <numberinputcomponent title="Value" val="10" min="1" max="10000000"></numberinputcomponent>                
+              </center>
+        </div>        
+
+          <div style="padding:3% 0; width: 305px;">
+              <vs-button v-on:click="confirmSymbol()" color="primary" type="border">Confirm</vs-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOLLINGER --> 
+       <div v-if="bollinger">
+        <div class="selectionPopup" style="width: 370px;">
+          <div style="font-size: 17px;"> Line </div>
+          <v-btn-toggle tile color="deep-purple accent-3"  group>
+            <v-btn v-model="switchBollingerLine1" v-on:click="upperBandLine()">  Upper Band </v-btn>
+            <v-btn v-model="switchBollingerLine2" v-on:click="middleBandLine()">  Middle Band </v-btn>
+            <v-btn v-model="switchBollingerLine3" v-on:click="lowerBandLine()">  Lower Band  </v-btn>
+          </v-btn-toggle>
+        </div>
+
+
+        <div class="choicePeriodBollinger">
+          <center>
+          <numberinputcomponent title="Standard Deviation" val="2" min="0" max="80"></numberinputcomponent>
+          <numberinputcomponent title="Period" val="20" min="1" max="80"></numberinputcomponent>
+
+          </center>
+        </div>
+
+        <symbolcomponent title="Bollinger Value"></symbolcomponent>
+
+        <center>
+          <div style="padding:3% 0; width: 305px;">
+          <vs-button  v-on:click="confirmBollinger()" color="primary" type="border">Confirm</vs-button>
+          </div>
+        </center>
+        </div>
+
+
+
+        </center>
+
+</vs-popup>
+</div>
+
+<!-- ACTION POPUP -->
+    <div v-if="popupType === 'action'">
+    
+      <vs-popup class="holamundo"  v-bind:title="title" :active.sync="isActive">
+    
+        <center>
+      
+      <div>
+        <div class="selectionPopup">        
+          <div style="font-size: 17px;"> Action type </div>
+
+          <v-btn-toggle  v-model="text0"  tile  color="deep-purple accent-3"   group>
+            <v-btn v-on:click="setTypeAction('buy')">   Buy   </v-btn>
+            <v-btn v-on:click="setTypeAction('sell')">  Sell  </v-btn>
+          </v-btn-toggle>
+
+        </div>
+    
+      <!-- div v-if="switch1" style="font-size: 17px; width: 280px;" -->
+          <!-- ORDER TYPE -->
+
+          <div class="selectionPopup">     
+            <div style="font-size: 17px;"> Order type </div>
+
+            <v-btn-toggle   v-model="text1"  tile  color="deep-purple accent-3"  group>
+              <v-btn v-on:click="setTypeOperation('market')"  class="myButton">  Market  </v-btn>
+              <v-btn v-on:click="setTypeOperation('limit')"   class="myButton">   Limit    </v-btn>
+            </v-btn-toggle>
+
+        </div>
+      
+        <div class="selectionPopup">     
+        <div style="font-size: 17px;"> Trade </div>
+
+        <v-btn-toggle v-model="text2" tile color="deep-purple accent-3" group>
+            <v-btn v-on:click="setTrade('first')">   First   </v-btn>
+            <v-btn v-on:click="setTrade('last')">    Last    </v-btn>
+            <v-btn v-on:click="setTrade('open')">    Open    </v-btn>
+            <v-btn v-on:click="setTrade('all')" >    All     </v-btn>
+        </v-btn-toggle>
+
+        </div>
+        <div style="padding:2% 0">
+        <vs-button v-on:click="confirmAction()" color="primary" type="border">Confirm</vs-button>
+        </div>
+    </div>
+    </center>
+</vs-popup>
+</div>
+
+    <!-- IF WE NEED TO RETRIEVE DATA -->
+    
+    <div v-if="popupType === 'retrieval'">
+    <vs-popup class="holamundo"  v-bind:title="title" :active.sync="isActive">
+      <div style="padding:2% 0">
+      <vs-button v-on:click="test()" color="primary" type="border">Retrieve my data!</vs-button>
+      </div>
+      <p>
+      [[this.jsonDataList]]
+      </p>
+    </vs-popup>
+    </div>
+    </div>
+    `,
+    methods: {
+      isPositiveValue(str) { // checks if a string corresponds to a positive number
+        if (typeof str !== 'string') {
+          return false;
+        }
+
+        str = (str).replace(",", "");
+        str = (str).replace(".", "");
+
+
+        const num = Number(str);
+
+        if (Number.isInteger(num) && num > 0) {
+          return true;
+        }
+
+        return false; 
+      },
+      /* CONFIRM METHODS */
+        confirm () {   //confirm method when the type of the popup is 'input'
+          var el = document.getElementById(this.name+'content');
+          el.innerHTML = this.value; // update the value of the square
+          this.isActive = false;    //closes the popup
+        },
+        confirmInput () {   //confirm method when the type of the popup is 'input'
+          if (this.switchVolume && this.inputValue == "") {
+            alert("Please enter an amount.")
+          } else if (this.switchPrice && this.inputValue == "") {
+            alert("Please enter an amount.");
+          }
+          else {
+          var el = document.getElementById(this.name+'content');
+          var val;
+          if ((this.inputValue).includes(",")) {
+            this.inputValue = (this.inputValue).replace(",", ".")
+            val = parseFloat(this.inputValue);
+          } else {
+            val = parseFloat(this.inputValue);
+          }
+          if (this.switchVolume && ((val<0) || (val>100))) {
+            alert("Please enter a percentage whose value is between 0 and 100.")}
+          else if (this.switchPrice && (val < 0)) {
+            alert("Please enter a positive value.")
+           }     
+          else {
+            var jsonString = '"amountType":'; 
+            this.nb = val;
+            el.innerHTML = this.inputValue; // update the value of the square
+            if (this.switchVolume) {el.innerHTML+= " %"; jsonString = jsonString + '"percent"';}
+            else { jsonString = jsonString + '"price"'; }
+            jsonString = jsonString + ',"amount":"' + val + '"';
+            this.$emit("updateMessage", jsonString);
+            this.isActive = false;    //closes the popup
+          }
+        }
+      },
+
+        confirmAction () {  //confirm method when the type of the popup is 'selection'
+          if (this.typeAction == "") {
+            alert("Please select a type of action.");
+          }
+          else if (this.typeOperation == "") {
+            alert("Please select a type of order.");
+          }
+          else if (this.typeTrade == "") {
+            alert("Please select a type of trade.");
+          }
+          else  {
+          var el = document.getElementById(this.name+'content');
+          var val = this.typeAction
+          el.innerHTML = val.toUpperCase(); // update the value of the square
+          var jsonString = "";
+          if(this.text0==0){ jsonString = jsonString + '"actionType":"buy","orderType":'}
+          else if(this.text0==1) { jsonString = jsonString + '"actionType":"sell","orderType":' }
+          if(this.text1==0){ jsonString = jsonString + '"market","trade":' } 
+          else if(this.text1==1){ jsonString = jsonString + '"limit","trade":' } 
+          if(this.text2==0){ jsonString = jsonString + '"first"' } 
+          else if (this.text2==1){ jsonString = jsonString + '"last"' } 
+          else if (this.text2==2){ jsonString = jsonString + '"open"' } 
+          else if (this.text2==3){ jsonString = jsonString + '"all"' } 
+          this.$emit("updateMessage", jsonString);
+          this.isActive = false;   // closes the popup
+          }
+        },
+
+        
+        confirmOption () {  //confirm method when the type of the popup is 'selection'
+          if (this.typeActionOption == "") {
+            alert("Please select a type of action.");
+          }
+          if (!this.switchPriceOption && !this.switchVolumeOption) {
+            alert("Please select a type of amount.");
+          }
+          if ((this.switchVolumeOption && this.inputValueOption == "") || (this.switchPriceOption && this.inputValueOption == "") ) {
+            alert("Please enter an amount.")
+          } else {
+            var val;
+            
+            
+            if ((this.inputValueOption).includes(",")) {
+              this.inputValueOption = (this.inputValueOption).replace(",", ".")
+              val = parseFloat(this.inputValueOption);
+            } else {
+              val = parseFloat(this.inputValueOption);
+            }
+
+            if (this.switchVolumeOption && ((val<0) || (val>100))) {
+              alert("Please enter a percentage whose value is between 0 and 100.")}
+            else if (this.switchPrice && (val < 0)) {
+              alert("Please enter a positive value.")
+            } 
+
+            console.log(this.inputValueOption);
+
+            if(!this.isPositiveValue(this.inputValueOption)){
+              alert("Please enter a positive value.");
+            }
+      
+            else {
+            var el = document.getElementById(this.name+'content');           
+            var jsonString = "";
+            var square = document.getElementById(this.name+'content');
+            square.style = "line-height: 35px;";
+
+
+            
+            if(this.textOption==0){ 
+              jsonString = jsonString + '"actionTypeOption":"buy","amountTypeOption":';
+              square.innerHTML = "Action : BUY<br />"; }
+            else if(this.textOption==1) { 
+              jsonString = jsonString + '"actionTypeOption":"sell","amountTypeOption":';
+              square.innerHTML = "Action : SELL<br />";
+            }
+            
+            if (this.switchVolumeOption) {
+              jsonString = jsonString + '"percent"';
+              square.innerHTML = square.innerHTML + "Value : " + val + "%<br />" ;
+
+            } 
+            else { 
+              jsonString = jsonString + '"price"';
+              square.innerHTML =  square.innerHTML + "Value : "  + val + "<br />";
+            }
+            jsonString = jsonString + ',"amountOption":"' + "Value : " + val + '", "profit":"';
+
+            var el1 = document.getElementById("valueInputProfit").value;
+            var el2 = document.getElementById("valueInputStop Loss").value;
+
+            square.innerHTML =  square.innerHTML + "Profit : " + el1 + "<br />Stop Loss : " + el2 ;
+
+
+            jsonString = jsonString + el1 + '", "stopLoss":"' + el2 +'"';
+
+            this.$emit("updateMessage", jsonString);
+            this.isActive = false;   // closes the popup
+            }
+          }
+        },
+
+        confirmMenu() {  //confirm method when the type of the popup is 'selection'
+          var val = document.getElementById("search");
+
+          if(coinpairs.includes(this.inputValueCurr.toUpperCase())){
+
+          var el = document.getElementById(this.name+'content');
+          el.innerHTML = this.inputValueCurr.toUpperCase(); // update the value of the square
+
+
+          //update of the json string 
+          if(this.name.charAt(9)=="1"){ //If it is the 1st block 
+          var jsonString = '"pair":"'+ this.inputValueCurr + '"' 
+          }
+          else{ // If it is the 5th block
+          var jsonString = '"currency":"'+ this.inputValueCurr + '"' 
+
+          }
+          this.$emit("updateMessage", jsonString);
+          this.isActive = false;   // closes the popup
+        }
+        else{
+          alert("Please select a valid currency.");
+        }
+
+        },
+        confirmSymbol(){ // checks if the inputs of the symbol part of the criterion popup are corrects
+          var val = document.getElementById("valueInputValue").value;
+          var time = document.getElementById('selectionMenuTime').value;
+          if(!this.isPositiveValue(val)){      alert("The period should be a positive integer"); }
+          else{
+            var symb = document.getElementById('selectionSymbol').value;
+            var square = document.getElementById(this.name+'content');
+            square.innerHTML = symb + " " + val; 
+            //update of the json string 
+            var jsonString = '"TimeUnit":"'+time+'","comparaison":"mathematics","comparaisonSymbol":"'+symb+'","comparaisonValue":"'+ val + '"' 
+            this.$emit("updateMessage", jsonString);
+            this.isActive = false;   // closes the popup
+          }
+        },
+        confirmMA(){ // checks if the inputs for the MA are corrects
+          var val = document.getElementById("valueInputPeriod").value;
+          var time = document.getElementById('selectionMenuTime').value;
+          if(!this.isPositiveValue(val)){  alert("The period should be a positive integer"); }
+          else{
+            if((val=>1) && (val<=200)){
+              var square = document.getElementById(this.name+'content');
+              var symb = document.getElementById('valueSymbolMA Value').value;
+              var val2 = document.getElementById("valueInputMA Value").value;
+              if(!this.isPositiveValue(val2)){ alert("The MA Value should be a positive integer"); }
+              else{
+
+                square.innerHTML = "MA"; 
+                var jsonString = '"TimeUnit":"'+time+'","comparaison":"indicator","indicator":"MA","periodValue":"'+ val;
+                jsonString = jsonString + '","symbol":"' + symb + '","symbolValue":"' + val2 + '"';
+                this.$emit("updateMessage", jsonString);
+                this.isActive=false;
+              }
+            }
+              else{    alert("This period value must be between 1 and 200");  }
+            }
+        },
+        confirmRsi(){ // checks if the inputs for the RSI are corrects
+          var val = document.getElementById("valueInputPeriod").value;
+          var time = document.getElementById('selectionMenuTime').value;
+          if(!this.isPositiveValue(val)){  alert("The period should be a positive integer"); }
+          else{
+            if((val=>1) && (val<=200)){
+              var square = document.getElementById(this.name+'content');
+              var symb = document.getElementById('valueSymbolRSI Value').value;
+              var val2 = document.getElementById("valueInputRSI Value").value;
+              if(!this.isPositiveValue(val2)){ alert("The RSI Value should be a positive integer"); }
+              else{
+                square.innerHTML = "RSI"; 
+                var jsonString = '"TimeUnit":"'+time+'","comparaison":"indicator","indicator":"RSI","periodValue":"'+ val;
+                jsonString = jsonString + '","symbol":"' + symb + '","symbolValue":"' + val2 + '"';
+                this.$emit("updateMessage", jsonString);
+              this.isActive=false;
+              }
+            }
+              else{   alert("This period value must be between 1 and 200");  }
+            }
+        },
+        confirmMACD(){ // checks if the inputs for the MACD are corrects
+          if((this.switchMacdLine1==false)&&(this.switchMacdLine2==false)&&(this.switchMacdLine3==false)){
+            alert("Please select a type of line");
+          }
+          else{
+            var el1 = document.getElementById("valueInputShort Term Period").value;
+            var el2 = document.getElementById("valueInputLong Term Period").value;
+            var el3 = document.getElementById("valueInputSignal Term Period").value;
+            var time = document.getElementById('selectionMenuTime').value;
+            if((!this.isPositiveValue(el1))||(!this.isPositiveValue(el2))||(!this.isPositiveValue(el3))){
+              alert("The inputs must be positive integers"); 
+            }
+            else{
+              if( ((el1=>1) && (el1<=200)) && ((el2=>1) && (el2<=200)) && ((el3=>1) && (el3<=200)) ){
+                var square = document.getElementById(this.name+'content');
+                var symb = document.getElementById('valueSymbolMACD Value').value;
+                var val = document.getElementById("valueInputMACD Value").value;
+                if(!this.isPositiveValue(val)){ alert("The MACD Value should be a positive integer"); }
+                else{
+                var jsonString = '"TimeUnit":"'+time+'","comparaison":"indicator","indicator":"MACD","line":'
+                if(this.switchMacdLine1){ square.innerHTML = "MACD"; jsonString = jsonString + '"line"'; }
+                if(this.switchMacdLine2){ square.innerHTML = "MACD"; jsonString = jsonString + '"signal"';}
+                if(this.switchMacdLine3){ square.innerHTML = "MACD"; jsonString = jsonString + '"histogram"' }
+                jsonString = jsonString + ', "shortTermPeriod":"' + el1 + '","longTermPeriod":"' + el2 + '","signalTermPeriod":"' + el3;
+                jsonString = jsonString + '","symbol":"' + symb + '","symbolValue":"' + val + '"';
+                this.$emit("updateMessage", jsonString);
+                this.isActive=false;
+                }
+             }
+             else{     alert("The periods should be between 1 and 200.");     }
+          }
+        }},
+        confirmBollinger(){ // checks if the inputs for the Bollinger are corrects
+          if((this.switchBollingerLine1==false)&&(this.switchBollingerLine2==false)&&(this.switchBollingerLine3==false)){
+            alert("Please select a type of line");
+          }
+          else{
+            var el1 = document.getElementById("valueInputStandard Deviation").value;
+            var el2 = document.getElementById("valueInputPeriod").value;
+            var time = document.getElementById('selectionMenuTime').value;
+            if(((!this.isPositiveValue(el1))&&(el1!=0))||(!this.isPositiveValue(el2))){
+              alert("The inputs must be positive integers"); 
+            }
+            else{
+              if( ((el1=>0) && (el1<=80)) && ((el2>=1)&&(el2<=80))){
+
+              var square = document.getElementById(this.name+'content');
+              var symb = document.getElementById('valueSymbolBollinger Value').value;
+              var val = document.getElementById("valueInputBollinger Value").value;
+              if(!this.isPositiveValue(val)){ alert("The Bollinger Value should be a positive integer"); }
+              else{
+              var jsonString = '"TimeUnit":"'+time+'","comparaison":"indicator","indicator":"StochasticRsi","line":'
+              if(this.switchBollingerLine1){ square.innerHTML = "Bollinger"; jsonString = jsonString + '"UpperBand",'; }
+              if(this.switchBollingerLine2){ square.innerHTML = "Bollinger"; jsonString = jsonString + '"MiddleBand",'; }
+              if(this.switchBollingerLine3){ square.innerHTML = "Bollinger"; jsonString = jsonString + '"LowerBand",'; }
+              jsonString = jsonString + '"standardDeviation":"' + el1 + '","period":"' + el2;
+              jsonString = jsonString + '","symbol":"' + symb + '","symbolValue":"' + val + '"';
+              this.$emit("updateMessage", jsonString);
+              this.isActive=false;
+              }
+              }
+              else{   alert("The standard deviation must be between 0 and 80 and the period must be between 1 and 80."); }
+          }
+          }
+        },
+        confirmStocRsi(){ // checks if the inputs for the Stochastic RSI are corrects
+          if((this.switchStocRsiLine1==false)&&(this.switchStocRsiLine2==false)){
+            alert("Please select a type of line");
+          }
+          else{
+            var el1 = document.getElementById("valueInputLength RSI").value;
+            var el2 = document.getElementById("valueInputLength Stoch").value;
+            var el3 = document.getElementById("valueInputSmooth K").value;
+            var el4 = document.getElementById("valueInputSmooth D").value;
+            var time = document.getElementById('selectionMenuTime').value;
+            if((!this.isPositiveValue(el1))
+            ||(!this.isPositiveValue(el2))
+            ||(!this.isPositiveValue(el3))
+            ||(!this.isPositiveValue(el4))){   alert("The inputs must be positive integers");  }
+            else{
+              if( ((el1=>1) && (el1<=200)) && ((el2=>1) && (el2<=200)) && ((el3=>1) && (el3<=200)) && (el4=>1) && (el4<=200)){
+
+              var square = document.getElementById(this.name+'content');
+              var symb = document.getElementById('valueSymbolStochastic RSI Value').value;
+              var val = document.getElementById("valueInputStochastic RSI Value").value;
+              if(!this.isPositiveValue(val)){ alert("The Stochastic RSI Value should be a positive integer"); }
+              else{
+              var jsonString = '"TimeUnit":"'+time+'","comparaison":"indicator","indicator":"StochasticRsi","line":'
+              if(this.switchStocRsiLine1){ square.innerHTML = "Stochastic RSI"; jsonString = jsonString + '"D"';}
+              if(this.switchStocRsiLine2){ square.innerHTML = "Stochastic RSI"; jsonString = jsonString + '"K"'; }
+              jsonString = jsonString + ',"lengthRSI":"' + el1 + '","lengthStoch":"' + el2 + '","smoothK":"' + el3 + '","smoothD":"' + el4;
+              jsonString = jsonString + '","symbol":"' + symb + '","symbolValue":"' + val + '"';
+              this.$emit("updateMessage", jsonString);
+              this.isActive=false;
+              }
+            }
+              else{   alert("The Stochastic RSI parameters should be between 1 and 200.")  }
+          }
+        }
+        },
+        filter() {
+
+         
+          var input, filter, ul, li, a, i, txtValue;
+          input = document.getElementById("search");
+          filter = input.value.toUpperCase();
+          ul = document.getElementById('selectionMenu'+this.title);
+          li = ul.getElementsByTagName("li");
+          for (i = 0; i < li.length; i++) {
+              a = li[i].getElementsByTagName("a")[0];
+              txtValue = a.innerText;
+              if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                  li[i].style.display = "";
+              } else {
+                  li[i].style.display = "none";
+              }
+        }},
+        updateFilter(item){
+        /*var input = document.getElementById("search");
+        input.value = item;*/
+        this.inputValueCurr = item;
+        },
+
+        clearOption(){
+            var el = document.getElementById(this.name+'content');           
+            var jsonString = "";
+            var square = document.getElementById(this.name+'content');
+            square.style = "line-height: 35px;";
+            square.innerHTML =  "";
+
+            this.$emit("updateMessage", jsonString);
+            this.isActive = false;   // closes the popup
+
+        },
+        volume() {
+          this.switchPrice = false;
+        },
+        price() {
+          this.switchVolume = false;
+        },
+        volumeOption() {
+          this.switchPriceOption = false;
+        },
+        priceOption() {
+          this.switchVolumeOption = false;
+        },
+
+        /* SWITCHES METHODS */
+        indicator(){
+          this.switch2 = false;
+        },
+        macdLine(){
+          this.switchMacdLine2=false;
+          this.switchMacdLine3=false;
+        },
+
+        setTypeAction(str) {
+          this.typeAction = str;
+        } , 
+        setTypeActionOption(str) {
+          this.typeActionOption = str;
+        } ,
+        setTypeOperation(str) {
+          this.typeOperation = str;
+        } ,
+        setTrade(str) {
+          this.typeTrade = str;
+        },
+        macdSignalLine(){
+          this.switchMacdLine1=false;
+          this.switchMacdLine3=false;
+        },
+        macdHistogram(){
+          this.switchMacdLine1=false;
+          this.switchMacdLine2=false;
+        },
+        upperBandLine(){
+          this.switchBollingerLine2=false;
+          this.switchBollingerLine3=false;
+        },
+        middleBandLine(){
+          this.switchBollingerLine1=false;
+          this.switchBollingerLine3=false;
+        },
+        lowerBandLine(){
+          this.switchBollingerLine1=false;
+          this.switchBollingerLine2=false;
+        },
+        DLine(){
+          this.switchStocRsiLine2=false;
+        },
+        KLine(){ 
+          this.switchStocRsiLine1=false;
+        },
+        /* CHECK METHODS */
+        isSymbol(){ // called when a symbol is selected
+          this.symbol=true;
+        },
+        isMA(){ // called when the MA indicator is selected
+          this.ma = true;
+          this.macd=false;
+          this.rsi=false;
+          this.stocRsi=false;
+          this.bollinger=false;
+        },
+        isMACD(){ // called when the MACD indicator is selected
+          this.ma = false;
+          this.macd=true;
+          this.rsi=false;
+          this.stocRsi=false;
+          this.bollinger=false;
+        },
+        isRSI(){ // called when the RSI indicator is selected
+          this.ma = false;
+          this.macd=false;
+          this.rsi=true;
+          this.stocRsi=false;
+          this.bollinger=false;
+        },
+        isSTOCRSI(){ // called when the Stochastic RSI indicator is selected
+          this.ma = false;
+          this.macd=false;
+          this.rsi=false;
+          this.stocRsi=true;
+          this.bollinger=false;
+        },
+        isBOLLINGER(){ // called when the bollinger indicator is selected
+          this.ma = false;
+          this.macd=false;
+          this.rsi=false;
+          this.stocRsi=false;
+          this.bollinger=true;
+        },
+        symbols(){
+          this.switch1 = false;
+          this.ma=false;
+          this.macd=false;
+          this.rsi=false;
+          this.stocRsi=false;
+          this.bollinger=false;
+        },
+        test() {
+          console.log(this.jsonDataList);
+        }
+    },
+    data(){
+      return{
+        nb : '',
+        inputValue:'',        
+        inputValueCurr:'',        
+        inputValueOption:'',
+        value : '',
+        valueAction:'',         // the value selected by the user
+        isActive: false,  // to know if the popup should be opened or not
+        symbolList: [">","<",">=","<=","=","!="],
+        switchVolume : false,
+        switchPrice : false,
+        switchVolumeOption : false,
+        switchPriceOption : false,
+        switch1:false,  // switch for indicator
+        switch2:false,  // switch for symbol
+        typeAction : "",
+        typeOperation : "",
+        typeTrade : "",
+        switchMacdLine1:false,       // switch for the 1st type of line for MACD indicator
+        switchMacdLine2:true,        // switch for the 2nd type of line for MACD indicator
+        switchMacdLine3:false,       // switch for the 3rd type of line for MACD indicator
+        switchBollingerLine1:false,  // switch for the 1st type of line for Bollinger indicator
+        switchBollingerLine2:true,   // switch for the 2nd type of line for Bollinger indicator
+        switchBollingerLine3:false,  // switch for the 3rd type of line for Bollinger indicator
+        switchStocRsiLine1:true,     // switch for the 1st type of line for Stochastic RSI indicator
+        switchStocRsiLine2:false,    // switch for the 2nd type of line for Stochastic RSI indicator
+        symbol:false,     // to check if a symbol has been selected in the symbol list
+        ma: false,       // to check if the MA indicator has been selected
+        macd: false,      // to check if the MACD indicator has been selected
+        rsi:false,        // to check if the RSI indicator has been selected
+        stocRsi:false,    // to check if the Stochastic RSI indicator has been selected
+        bollinger:false,  // to check if the Bollinger indicator has been selected
+        text0: "",
+        text1: "",
+        text2: "",
+        textOption: "",
+        typeActionOption : ""
+      }
+    }
+  })
+
+
+
+
+  /* ----------------------------------------------------------------- */
+  /* --- Component to create a square in which we can drop a block --- */
+  /* ----------------------------------------------------------------- */
+
+   var dropcomponent = Vue.component('dropcomponent',{
+     name:'dropcomponent',
+     delimiters:['[[',']]'],
+     props: ['elements','title','name','num'],  // elements = the global list of data   // name = the id of the square's content
+     components: { 'popupcomponent': popupcomponent },
+     template : 
+     `
+     <transition name="fade" appear>
+      <div @drop=" onDrop($event); $refs.popup.name = name; $refs.popup.isActive = true; " @dragover.prevent @dragenter.prevent @dblclick="$refs.popup.name = name; $refs.popup.isActive = true; ">
+        
+        <div draggable @dragstart="startDrag($event)" v-bind:class="concatenate('drag-el', num)">
+
+          <div class="content" v-bind:id="name+'content'"> </div>
+          
+          </div>
+          <popupcomponent ref="popup" v-on:updateMessage="updateMessage" :title="this.content" :popupType="this.popupType" :selectionList="this.selectionList"></popupcomponent>
+        </div>
+        
+        </transition>
+     `,
+
+    methods: {
+      concatenate(str,nb){
+        return str + nb;
+      },
+        startDrag (evt) { // drag the block 
+          evt.dataTransfer.dropEffect = 'move'
+          evt.dataTransfer.effectAllowed = 'move'
+          evt.dataTransfer.setData('itemID', this.id)
+        },
+        onDrop (evt) {  // drop the block
+          const itemID = evt.dataTransfer.getData('itemID')
+          const item = this.elements.find(item => item.id == itemID)
+          if (this.num == item.id) {
+            this.id = item.id;
+            this.popupType = item.popupType;
+            this.selectionList = item.selectionList;
+            this.content = item.title;
+          } else {
+            alert("Please drop a " + this.title + " box here !");
+            this.$refs.popup.isActive = false; 
+          }
+          },
+        updateMessage(reply) {
+        this.message = reply;
+        this.$emit("updateMessage", this.message)
+        }
+    },
+    data(){
+        return{
+        id: "", // number of the block
+        popupType:"",  // type of popup
+        selectionList: [],
+        message: ""  // message = the json string for the square 
+      }}
+   })
+
+  
+   /* ---------------------------------------------------------------- */
+   /* --- Component to create a standard line with several squares --- */
+   /* ---------------------------------------------------------------- */
+
+   var linecomponent = Vue.component('linecomponent',{
+    name:'linecomponent',
+    delimiters:['[[',']]'],
+    props: ['data','idLine'], // data = the global list  
+    components: { 'dropcomponent': dropcomponent },
+    template:
+    `
+        <div  v-bind:id="'#line'+idLine">  
+           <div class = 'line'>
+            <div class='mandatory'> IF </div>
+            <dropcomponent v-bind:id="'#line'+idLine+'#el1'" v-bind:num="1" :elements="data" :name="'#line'+idLine+'#el1'" v-bind:title="'Crypto' +' '+ 'Currency'" v-on:updateMessage="updateBlock1"></dropcomponent>
+            <dropcomponent v-bind:id="'#line'+idLine+'#el2'" v-bind:num="2" :elements="data" :name="'#line'+idLine+'#el2'" v-bind:title="'Criterion'" v-on:updateMessage="updateBlock2"></dropcomponent>
+            <div class='mandatory'> THEN </div>
+            <dropcomponent v-bind:id="'#line'+idLine+'#el3'" v-bind:num="3" :elements="data" :name="'#line'+idLine+'#el3'" v-bind:title="'Action'" v-on:updateMessage="updateBlock3"></dropcomponent>
+            <dropcomponent v-bind:id="'#line'+idLine+'#el4'" v-bind:num="4" :elements="data" :name="'#line'+idLine+'#el4'" v-bind:title="'Currency'" v-on:updateMessage="updateBlock4"></dropcomponent>
+            <dropcomponent v-bind:id="'#line'+idLine+'#el5'" v-bind:num="5" :elements="data" :name="'#line'+idLine+'#el5'" v-bind:title="'Numeric' +' '+ 'Value'" v-on:updateMessage="updateBlock5"></dropcomponent>
+            <dropcomponent v-bind:id="'#line'+idLine+'#el6'" v-bind:num="6" :elements="data" :name="'#line'+idLine+'#el6'" v-bind:title="'Option'" v-on:updateMessage="updateBlock6"></dropcomponent>
+
+              <div class="trash">
+                <button v-on:click="deleteLine()" class="deleteLineButton">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                  <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                  <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                  </svg>
+                </button> 
+              </div>
+            </div>
+        </div>
+    `,
+    methods: {
+        myString() {
+        var str = (this.block6 != "")? 
+        "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "," + this.block6 + "}" 
+        : "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "}" 
+          return str;
+        },
+        deleteLine () { // delete the whole line
+          let toDelete = document.getElementById("#line"+this.idLine);
+          toDelete.remove();
+        },
+        updateBlock1(reply) {
+        this.block1 = reply;
+        //var json = "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "," + this.block6 + "}";
+        var json = this.myString();
+        this.$emit("updateMessage", json, this.idLine);  
+       },
+        updateBlock2(reply) {
+        this.block2 = reply;
+        //var json = "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "," + this.block6 + "}";
+        var json = this.myString();
+
+        this.$emit("updateMessage", json, this.idLine);    
+       },
+        updateBlock3(reply) {
+        this.block3 = reply;
+        //var json = "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "," + this.block6 + "}";
+        var json = this.myString();
+
+        this.$emit("updateMessage", json, this.idLine);   
+       },
+        updateBlock4(reply) {
+        this.block4 = reply;
+        //var json = "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "," + this.block6 + "}";
+        var json = this.myString();
+
+        this.$emit("updateMessage", json, this.idLine);  
+        },
+        updateBlock5(reply) {
+        this.block5 = reply;
+        //var json = "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "," + this.block6 + "}";
+        var json = this.myString();
+
+        this.$emit("updateMessage", json, this.idLine);    
+       }, 
+       updateBlock6(reply) {
+        this.block6 = reply;
+        //var json = "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "," + this.block6 +"}";
+        var json = this.myString();
+
+        this.$emit("updateMessage", json, this.idLine);    
+       }
+    },
+    data(){
+        return{
+        block1: "",  // crypto currency block
+        block2: "",  // criterion block
+        block3: "",  // action block
+        block4: "",  // numeric value block
+        block5: "",  // currency block
+        block6 : "" //option block
+      }}
+  })
+
+    
+
+
+    /* --------------------------------------------------------- */
+    /* --- Main Component : It contains all other components --- */ 
+    /* --------------------------------------------------------- */
+
+    var principalcomponent = Vue.component('principalcomponent',{
+    name:'principalcomponent',
+    delimiters: ['[[',']]'],
+    components: { 'linecomponent': linecomponent },
+    template:
+    `
+    <div class="page">
+          <div class="dragSection">
+            <button v-on:click="newLine()" class="addButton">+ New Line </button>
+              <div v-for='(item,index) in this.dataList'>
+                    <transition name="fade" appear>
+                      <div v-bind:class="concatenate('draggable draggable', [[index]])" draggable @dragstart="startDrag($event, item)">[[item.title]]</div>
+                      </transition>
+              </div>  
+              <button v-on:click="confirm()" class="saveButton"> ✓ Confirm </button>  
+      
+          </div>
+          <div class="separation"></div>
+          <div class="lines">
+            <div v-for="newContent in lines" :key="newContent.id">
+              <linecomponent :data="dataList" :idLine="newContent.id" v-on:updateMessage="updateJson"></linecomponent> 
+            </div>
+          </div>
+    </div>
+    `,
+    methods: {
+      concatenate(str,nb){
+        return str + nb;
+      },
+      startDrag (evt, item) {  // drag an item from upper menu
+          evt.dataTransfer.dropEffect = 'move'
+          evt.dataTransfer.effectAllowed = 'move'
+          evt.dataTransfer.setData('itemID', item.id);
+        },
+        newLine() {  // add a new line 
+          this.lines.push({
+            id: this.id += 1
+          })
+          this.jsonTab.push("");
+        },
+        updateJson(reply, idL) {
+        this.jsonTab[idL-1] = reply;
+        },
+        createJsonFile(){
+          var jsonFile = JSON.parse(this.json);
+          return jsonFile;
+        }
+            ,
+        confirm(){ // when the user wants to confirm its selection
+          //this.readCsv;
+          this.json = '{ "data" : [';
+          var ready = true;
+          for (let i = 1; i <= this.id; i++) {
+
+            let ligne = document.getElementById("#line"+i);
+            if(ligne!=null){ // if the ligne hasn't been deleted 
+              for(let j = 1; j <= 5; j ++){ // check if one of the square is empty
+                  let el = document.getElementById("#line"+i+"#el"+j+"content");
+                  if(el.innerHTML==""){
+                    alert("Please fill every square !");
+                    ready=false;
+                    break;
+                  }
+              }
+              
+               this.json = this.json + this.jsonTab[i-1] + ","
+              }
+          }
+          this.json = this.json.slice(0, -1); // removing the last ,
+          
+          this.json = this.json + "] }";
+
+          if(ready){
+
+            //creation of the jsonObject
+            var jsonFile = JSON.parse(this.json);
+            console.log(jsonFile);
+
+
+          //*******************************************
+            //POSTING our JSON object TO THE API
+            
+            /*let xmlrequest = new XMLHttpRequest();
+            let url = "../coinpairs.csv";
+       
+            xmlrequest.open("POST", url, true);
+            xmlrequest.setRequestHeader("Content-Type", "application/json");
+ 
+            // Create a state change callback
+            xmlrequest.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    console.log(this.responseText);
+                }
+            }
+
+            xmlrequest.send(this.json);*/
+          //*******************************************
+
+          }
+        }
+    },
+    data(){
+      return{
+      id: 0, 
+      lines: [],
+      jsonTab: [],
+      json: "",
+      csv : [],
+      currencyList : [],
+      csvDataList : [],
+      dataList: [  { id: '1', title: 'Crypto Currency', popupType:'selection', selectionList:coinpairs },      
+                   { id: '2', title: 'Criterion', popupType:'criterion'},
+                   { id: '3', title: 'Action', popupType:'action'},
+                   { id: '4', title: 'Numeric Value', popupType:'input' },
+                   { id: '5', title: 'Currency', popupType:'selection', selectionList:coinpairs},
+                   { id: '6', title: 'Option', popupType:'option'}]
+      }}
+    });
+
+  
+    /* --------------- */
+    /* ---   App   --- */
+    /* --------------- */
+
+    var app = new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#app',
+        data: {
+            message: 'Hello Vue!',
+        }        
+    });
+
+</script>
+
+<style>
+
+
+  select {
+  font-size: 17px;
+  border-radius: 7px;
+  width: auto;
+  height: 20%;
+  background: white;
+  border: 1px solid #5796ff;
+  text-align: center;
+}
+
+/* Style for the blue squares to select elements in the popups */
+.selectionPopup{
+  width: 100%;
+  width: 325px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border:1px solid #1f74ff;
+  border-radius: 15px;
+  height: 80px;
+}
+
+.selectionPopup:hover{
+  background-color: #edf4ff;
+}
+
+
+</style>
+
+
+  
+{% else %}
+  <div>
+    Please<a href="{% url 'login_url' %}"> &nbsp;Login&nbsp; </a> or&nbsp; <a href="{% url 'register_url' %}">Register</a>.
+  </div>
+
+ {% endif %}
+
+
+{% endblock %}

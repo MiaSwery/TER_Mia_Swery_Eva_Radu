@@ -1,0 +1,389 @@
+.page{
+width: 1670px;
+}
+
+.lines div{
+float: left;
+}
+
+.drag-el div{
+float: left;
+}
+
+.mandatory,
+.drag-el, .drag-el1, .drag-el2, .drag-el3, .drag-el4, .drag-el5, .drag-el6{
+border-radius: 15px;
+width:150px;
+height:150px;
+margin: 4px 20px;
+color: white;
+text-align: center;
+vertical-align: middle;
+line-height: 150px;
+}
+
+.mandatory{
+background-color: #9ebce7;
+border: 2px solid #9ebce7;
+}
+
+.drag-el{
+background-color: #2d50b5;
+border: 2px solid #2d50b5;
+}
+
+.drag-el1{
+background-color: #b58fe7;
+border: 2px solid #b58fe7;
+}
+
+.drag-el2{
+background-color: #8e3ef6;
+border: 2px solid #8e3ef6;
+}
+
+
+.drag-el3{
+background-color: #47c0ba;
+border: 2px solid #47c0ba;
+}
+
+.drag-el4{
+background-color: #438ddd;
+border: 2px solid #438ddd;
+}
+
+.drag-el5{
+background-color: #007bff;
+border: 2px solid #007bff;
+}
+
+.drag-el6{
+color : rgb(0, 24, 242);
+background-color: #ffffff;
+border: 5px solid rgb(0, 24, 242);
+border-style : dotted;
+}
+
+
+.separation{
+height: 20px;
+}
+
+.lines{
+overflow-y: auto;
+max-height: 600px;
+}
+
+.dragSection {
+background: linear-gradient(#f8f9fc,#aabffb);
+width: 1670px;
+height: 70px;
+z-index: 9;
+bottom: 150;
+}
+
+.dragSection div, .dragSection button{ 
+float:left;
+}
+
+
+.draggable,
+.button, .saveButton, .addButton {
+color: white;
+padding: 16px 32px;
+text-align: center;
+text-decoration: none;
+display: inline-block;
+margin: 4px 18px;
+transition-duration: 0.4s;
+cursor: pointer;
+background-color: #2d50b5;
+border: 2px solid #2d50b5;
+border-radius: 15px;
+width: fit-content;
+height: fit-content;
+}
+
+.draggable0 {
+  color:  #b58fe7;
+  background-color:  #f8f9fc;
+  border: 2px solid #b58fe7;
+}
+
+.draggable0:hover {
+  color:  white;
+  background-color: #b58fe7;
+  border: 2px solid   #b58fe7;
+}
+
+.draggable1 {
+  color:  #8e3ef6;
+  background-color:  #f8f9fc;
+  border: 2px solid #8e3ef6;
+}
+
+.draggable1:hover {
+  background-color:  #8e3ef6;
+  color:  #f8f9fc;
+  border: 2px solid #8e3ef6;
+}
+
+.draggable2 {
+  color:  #47c0ba;
+  background-color:  #f8f9fc;
+  border: 2px solid #47c0ba;
+}
+
+.draggable2:hover {
+  background-color:  #47c0ba;
+  color:  #f8f9fc;
+  border: 2px solid #47c0ba;
+}
+
+.draggable3 {
+  color:  #438ddd;
+  background-color:  #f8f9fc;
+  border: 2px solid #438ddd;
+}
+
+.draggable3:hover {
+  background-color:  #438ddd;
+  color:  #f8f9fc;
+  border: 2px solid #438ddd;
+}
+
+.draggable4 {
+  color:  #007bff;
+  background-color:  #f8f9fc;
+  border: 2px solid #007bff;
+}
+
+.draggable4:hover {
+  background-color:  #007bff;
+  color:  #f8f9fc;
+  border: 2px solid #007bff;
+}
+
+.draggable5 {
+  color:  rgb(0, 24, 242);
+  background-color:  #f8f9fc;
+  border: 2px solid rgb(0, 24, 242);
+}
+
+.draggable5:hover {
+  background-color:  rgb(0, 24, 242);
+  color:  #f8f9fc;
+  border: 2px solid rgb(0, 24, 242);
+}
+
+
+.addButton{
+  color:  #f8f9fc;
+  background-color:  #2d50b5;
+  border: 2px solid #2d50b5;
+}
+
+
+.addButton:hover{
+  color:  white;
+  background-color:  #6987df;
+  border: 2px solid #6987df;
+}
+
+
+.saveButton{
+  background-color: rgb(82, 170, 82);
+  border: 2px solid rgb(82, 170, 82);
+}
+
+
+.saveButton:hover{
+  background-color: rgb(67, 138, 67);
+  border: 2px solid rgb(67, 138, 67);
+}
+
+.button:hover{
+  background-color:  #3960d0;
+  color: white;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .6s; 
+}
+
+.content{
+  width: 145px;
+  height: 130px;
+  display: inline-block;
+  position: relative;
+  line-height: 150px;
+}
+
+
+.drag-el:hover{
+  display: inline-flex;
+}
+
+
+.deleteLineButton{
+  display: none;
+  float: left;
+  background-color: #f8f9fc;
+  border: 2px solid #3960d0;
+  color: #3960d0;
+  width: 35px;
+  height: 35px;  
+  line-height: 30px;
+  border-radius: 10px;
+  margin-top: 50px;
+  margin-right: 35px ;
+}
+
+.deleteLineButton:hover{
+  background-color: #c2c3c793;
+}
+
+.trash{
+  height: 150px;
+  width: 80px;
+  display: flex;
+  justify-content: center;
+}
+
+
+.line:hover .deleteLineButton{
+    display: block;
+}
+
+
+
+select {
+  font-size: 17px;
+  border-radius: 7px;
+  width: auto;
+  height: 20%;
+  background: white;
+  border: 1px solid #5796ff;
+  text-align: center;
+
+}
+
+
+.popupCriterion{
+  border:1px solid #1f74ff;
+  height: auto;
+  width: auto;
+  border-radius: 15px;
+}
+
+
+
+.timeUnit{
+  margin-top: 15px;
+}
+
+.choiceCriterion{
+  width: 300px;
+  height: 100px;
+}
+
+.optionSwitch1{
+  width: auto;
+}
+
+
+.choiceCriterion div{
+  float: left;
+  padding: 16px 32px;
+}
+
+
+.valueInput{
+  width:50px;
+  text-align:center;
+  border:1px solid #1f74ff;
+  border-radius: 5px;
+  transition: all .3s ease;
+}
+
+
+.actionPopup{
+  width: 100%;
+  width: 325px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border:1px solid #1f74ff;
+  border-radius: 15px;
+}
+
+.actionPopup:hover{
+  background-color: #edf4ff;
+}
+
+
+.choiceLineBollinger, .choiceLineStocRsi, .choiceLineMACD, .choicePeriodMARsi, .choiceOption {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border:1px solid #1f74ff;
+  height: 80px;
+  width: 305px;
+  border-radius: 15px;
+}
+
+.choicePeriodMARsi{
+  width: auto;
+}
+
+.choiceLineBollinger:hover,
+.choiceLineStocRsi:hover,
+.choicePeriodBollinger:hover,
+.choiceStocRsi:hover,
+.popupCriterion:hover,
+.choiceLineMACD:hover,
+.choicePeriodMACD:hover,
+.choicePeriodMARsi:hover, 
+.choiceOption:hover{
+  background-color: #edf4ff;
+}
+
+.choiceLineBollinger div, .choiceLineStocRsi div, .choiceLineMACD div{
+  float: left;
+}
+
+.choiceLineBollinger .block,
+.choiceLineStocRsi .block,
+.choiceLineMACD .block{
+  width: 100px;
+  line-height: 40px;
+}
+
+
+.choicePeriodBollinger, .choiceStocRsi, .choicePeriodMACD .choiceOption{
+  border:1px solid #1f74ff;
+  height: auto;
+  width: 305px;
+  border-radius: 15px;
+}
+
+ul {
+  height: 200px; 
+  list-style-type: none; 
+  width: 165px; overflow: auto;
+  border: 2px solid  #8eb9ff;
+  border-radius: 15px;
+  margin-top: 50px;
+
+}
+
+a:link, a:hover, a:visited {
+  color: black;
+}
+
+ul:hover {
+  background-color: #edf4ff;
+}
