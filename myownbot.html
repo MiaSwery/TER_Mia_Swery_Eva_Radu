@@ -11,7 +11,6 @@
 
 <body>
 <div id="app" class="test">
-    <!--[[message]]-->
     <principalcomponent></principalcomponent> 
 </div>
 </body>
@@ -21,29 +20,32 @@
 
 <script type="module">
 
-        var coinpairs = []; // Used in the 1st pop-up
+    var coinpairs = []; // Used in the 1st and 5th pop-up
         
 
-         function readCsv() { 
-            var str = ""
-                fetch("../coinpairs.csv")
-            .then(response => response.text())
-            .then(data => { 
-             
-              const lines = data.split("\n");
+    function readCsv() {  // Reads the csv file and update the coinpairs list 
+      var str = ""
+        fetch("../coinpairs.csv")
+          .then(response => response.text())
+          .then(data => { 
               
-              for (let i = 1; i < lines.length-1; i++) {
-                  coinpairs[i-1] = lines[i].split(",")[1];
-              }
-              console.log(coinpairs);
+      const lines = data.split("\n");
+              
+      for (let i = 1; i < lines.length-1; i++) {
+          coinpairs[i-1] = lines[i].split(",")[1];
+      }
+      
+      console.log(coinpairs);
 
-            } ) } ;
+      } ) } ;
 
-        window.onload = readCsv;
+    window.onload = readCsv; // When the windows loads ==> we should load the csv 
 
   /* ---------------------------------- */
   /* --- Symbol Selection Component --- */
   /* ---------------------------------- */
+
+  // Used anytime the user needs to select a symbol in the indicator part of the 2nd popup 
 
   var symbolcomponent = Vue.component('symbolcomponent',{
     name:'symbolcomponent',
@@ -71,6 +73,8 @@
   /* --- Number Input Component --- */
   /* ------------------------------ */
 
+  // It corresponds to the following type of number input :  " - [ ] + " 
+
   var numberinputcomponent = Vue.component('numberinputcomponent',{
     name:'numberinputcomponent',
     delimiters:['[[',']]'],
@@ -89,7 +93,7 @@
     </div>
     `,
     methods:{
-    increaseValue(){
+    increaseValue(){ // when the user clicks on "+"
           var el = document.getElementById("valueInput"+this.title).value;
           this.valInput = el;
           this.valInput++;
@@ -98,7 +102,7 @@
             this.valInput = this.max;
           }
         },
-      decreaseValue(){
+      decreaseValue(){ // when the user clicks on "-"
           var el = document.getElementById("valueInput"+this.title).value;
           this.valInput = el;
           this.valInput--;
@@ -112,7 +116,7 @@
     
     data(){
       return{
-        valInput:this.val
+        valInput:this.val // the value of the input
       }
     }
     
@@ -511,7 +515,7 @@
     <div v-if="popupType === 'retrieval'">
     <vs-popup class="holamundo"  v-bind:title="title" :active.sync="isActive">
       <div style="padding:2% 0">
-      <vs-button v-on:click="test()" color="primary" type="border">Retrieve my data!</vs-button>
+      <vs-button v-on:click="showJson()" color="primary" type="border">Retrieve my data!</vs-button>
       </div>
       <p>
       [[this.jsonDataList]]
@@ -521,7 +525,7 @@
     </div>
     `,
     methods: {
-      isPositiveValue(str) { // checks if a string corresponds to a positive number
+      isPositiveValue(str) { // checks if a string corresponds to a positive number (float or integer)
         if (typeof str !== 'string') {
           return false;
         }
@@ -563,7 +567,11 @@
             alert("Please enter a percentage whose value is between 0 and 100.")}
           else if (this.switchPrice && (val < 0)) {
             alert("Please enter a positive value.")
-           }     
+           }    
+         
+          if(!this.isPositiveValue(this.inputValue)){
+              alert("Please enter a positive value.");
+          } 
           else {
             var jsonString = '"amountType":'; 
             this.nb = val;
@@ -861,9 +869,7 @@
           }
         }
         },
-        filter() {
-
-         
+        filter() { // Filter for the 1st and 5th popup
           var input, filter, ul, li, a, i, txtValue;
           input = document.getElementById("search");
           filter = input.value.toUpperCase();
@@ -878,13 +884,11 @@
                   li[i].style.display = "none";
               }
         }},
-        updateFilter(item){
-        /*var input = document.getElementById("search");
-        input.value = item;*/
+        updateFilter(item){ // Update the input of the 1st and 5th popup after a pair has been selected
         this.inputValueCurr = item;
         },
 
-        clearOption(){
+        clearOption(){ // Delete the option 
             var el = document.getElementById(this.name+'content');           
             var jsonString = "";
             var square = document.getElementById(this.name+'content');
@@ -994,7 +998,7 @@
           this.stocRsi=false;
           this.bollinger=true;
         },
-        symbols(){
+        symbols(){ // called when the user wants to use a symbol and not an indicator 
           this.switch1 = false;
           this.ma=false;
           this.macd=false;
@@ -1002,29 +1006,29 @@
           this.stocRsi=false;
           this.bollinger=false;
         },
-        test() {
+        showJson() {
           console.log(this.jsonDataList);
         }
     },
     data(){
       return{
         nb : '',
-        inputValue:'',        
-        inputValueCurr:'',        
-        inputValueOption:'',
+        inputValue:'',       // the value of the input in the 4th popup
+        inputValueCurr:'',   // the value of the input in the 1st and 5th popup
+        inputValueOption:'', // the value of the input in the option popup
         value : '',
-        valueAction:'',         // the value selected by the user
+        valueAction:'',    // the value selected by the user
         isActive: false,  // to know if the popup should be opened or not
-        symbolList: [">","<",">=","<=","=","!="],
-        switchVolume : false,
-        switchPrice : false,
-        switchVolumeOption : false,
-        switchPriceOption : false,
+        symbolList: [">","<",">=","<=","=","!="], 
+        switchVolume : false, // if true => the user wants a volume amount in the 4th popup
+        switchPrice : false,  // if true => the user wants a price amount in the 4th popup
+        switchVolumeOption : false, // if true => the user wants a volume amount in the option popup
+        switchPriceOption : false, // if true => the user wants a volume amount in the option popup
         switch1:false,  // switch for indicator
         switch2:false,  // switch for symbol
-        typeAction : "",
-        typeOperation : "",
-        typeTrade : "",
+        typeAction : "",  // BUY or SELL
+        typeOperation : "", // Market or Limit
+        typeTrade : "",  // First, Open, Last or All
         switchMacdLine1:false,       // switch for the 1st type of line for MACD indicator
         switchMacdLine2:true,        // switch for the 2nd type of line for MACD indicator
         switchMacdLine3:false,       // switch for the 3rd type of line for MACD indicator
@@ -1034,16 +1038,16 @@
         switchStocRsiLine1:true,     // switch for the 1st type of line for Stochastic RSI indicator
         switchStocRsiLine2:false,    // switch for the 2nd type of line for Stochastic RSI indicator
         symbol:false,     // to check if a symbol has been selected in the symbol list
-        ma: false,       // to check if the MA indicator has been selected
+        ma: false,        // to check if the MA indicator has been selected
         macd: false,      // to check if the MACD indicator has been selected
         rsi:false,        // to check if the RSI indicator has been selected
         stocRsi:false,    // to check if the Stochastic RSI indicator has been selected
         bollinger:false,  // to check if the Bollinger indicator has been selected
-        text0: "",
-        text1: "",
-        text2: "",
-        textOption: "",
-        typeActionOption : ""
+        text0: "",      // to check if the user selected BUY or SELL
+        text1: "",      // to check if the user selected Market or Limit
+        text2: "",      // to check if the user selected First, Open, Last or All
+        textOption: "", // to check if the user selected BUY or SELL in the option block
+        typeActionOption : "" // BUY or SELL in the option block
       }
     }
   })
@@ -1077,7 +1081,7 @@
      `,
 
     methods: {
-      concatenate(str,nb){
+      concatenate(str,nb){ // Allows us to concatenate a string with a number
         return str + nb;
       },
         startDrag (evt) { // drag the block 
@@ -1098,7 +1102,7 @@
             this.$refs.popup.isActive = false; 
           }
           },
-        updateMessage(reply) {
+        updateMessage(reply) { // Update the json string of the block 
         this.message = reply;
         this.$emit("updateMessage", this.message)
         }
@@ -1107,7 +1111,7 @@
         return{
         id: "", // number of the block
         popupType:"",  // type of popup
-        selectionList: [],
+        selectionList: [], // the list in which a user should select something 
         message: ""  // message = the json string for the square 
       }}
    })
@@ -1147,53 +1151,47 @@
         </div>
     `,
     methods: {
-        myString() {
+        deleteLine () { // delete the whole line
+          let toDelete = document.getElementById("#line"+this.idLine);
+          toDelete.remove();
+        },
+        myString() { // Allows us to get the json string for a line
         var str = (this.block6 != "")? 
         "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "," + this.block6 + "}" 
         : "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "}" 
           return str;
         },
-        deleteLine () { // delete the whole line
-          let toDelete = document.getElementById("#line"+this.idLine);
-          toDelete.remove();
-        },
-        updateBlock1(reply) {
+        updateBlock1(reply) { // Updates the json string of the line with the new information for the 1st block
         this.block1 = reply;
-        //var json = "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "," + this.block6 + "}";
         var json = this.myString();
         this.$emit("updateMessage", json, this.idLine);  
        },
-        updateBlock2(reply) {
+        updateBlock2(reply) { // Updates the json string of the line with the new information for the 2nd block
         this.block2 = reply;
-        //var json = "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "," + this.block6 + "}";
         var json = this.myString();
 
         this.$emit("updateMessage", json, this.idLine);    
        },
-        updateBlock3(reply) {
+        updateBlock3(reply) { // Updates the json string of the line with the new information for the 3rd block
         this.block3 = reply;
-        //var json = "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "," + this.block6 + "}";
         var json = this.myString();
 
         this.$emit("updateMessage", json, this.idLine);   
        },
-        updateBlock4(reply) {
+        updateBlock4(reply) { // Updates the json string of the line with the new information for the 4th block
         this.block4 = reply;
-        //var json = "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "," + this.block6 + "}";
         var json = this.myString();
 
         this.$emit("updateMessage", json, this.idLine);  
         },
-        updateBlock5(reply) {
+        updateBlock5(reply) { // Updates the json string of the line with the new information for the 5th block
         this.block5 = reply;
-        //var json = "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "," + this.block6 + "}";
         var json = this.myString();
 
         this.$emit("updateMessage", json, this.idLine);    
        }, 
-       updateBlock6(reply) {
+       updateBlock6(reply) { // Updates the json string of the line with the new information for the 6th block
         this.block6 = reply;
-        //var json = "{" + this.block1 + "," + this.block2 + "," + this.block3 + "," + this.block4 + "," + this.block5 + "," + this.block6 +"}";
         var json = this.myString();
 
         this.$emit("updateMessage", json, this.idLine);    
@@ -1206,7 +1204,7 @@
         block3: "",  // action block
         block4: "",  // numeric value block
         block5: "",  // currency block
-        block6 : "" //option block
+        block6 : ""  // option block
       }}
   })
 
@@ -1243,7 +1241,7 @@
     </div>
     `,
     methods: {
-      concatenate(str,nb){
+      concatenate(str,nb){ // Allows us to concatenate a string with a number 
         return str + nb;
       },
       startDrag (evt, item) {  // drag an item from upper menu
@@ -1266,13 +1264,12 @@
         }
             ,
         confirm(){ // when the user wants to confirm its selection
-          //this.readCsv;
           this.json = '{ "data" : [';
           var ready = true;
           for (let i = 1; i <= this.id; i++) {
 
             let ligne = document.getElementById("#line"+i);
-            if(ligne!=null){ // if the ligne hasn't been deleted 
+            if(ligne!=null){ // if the line hasn't been deleted 
               for(let j = 1; j <= 5; j ++){ // check if one of the square is empty
                   let el = document.getElementById("#line"+i+"#el"+j+"content");
                   if(el.innerHTML==""){
@@ -1320,12 +1317,12 @@
     },
     data(){
       return{
-      id: 0, 
-      lines: [],
-      jsonTab: [],
-      json: "",
+      id: 0,  // id that we increment anytime the user click on "New Line" ( voir fonction newLine() )
+      lines: [],  // array with the ids. Example : if there a 3 lines, lines = [0,1,2] 
+      jsonTab: [], // jsonTab[i] = json string for the ith line selected by the user
+      json: "", // the final json string
       csv : [],
-      currencyList : [],
+      currencyList : [], 
       csvDataList : [],
       dataList: [  { id: '1', title: 'Crypto Currency', popupType:'selection', selectionList:coinpairs },      
                    { id: '2', title: 'Criterion', popupType:'criterion'},
@@ -1333,6 +1330,7 @@
                    { id: '4', title: 'Numeric Value', popupType:'input' },
                    { id: '5', title: 'Currency', popupType:'selection', selectionList:coinpairs},
                    { id: '6', title: 'Option', popupType:'option'}]
+                   // dataList = the information for each block 
       }}
     });
 
@@ -1353,8 +1351,8 @@
 
 <style>
 
-
-  select {
+/* If we move this into the css file, the style isn't apply to the select menus */
+select {
   font-size: 17px;
   border-radius: 7px;
   width: auto;
@@ -1362,26 +1360,9 @@
   background: white;
   border: 1px solid #5796ff;
   text-align: center;
+
 }
-
-/* Style for the blue squares to select elements in the popups */
-.selectionPopup{
-  width: 100%;
-  width: 325px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  border:1px solid #1f74ff;
-  border-radius: 15px;
-  height: 80px;
-}
-
-.selectionPopup:hover{
-  background-color: #edf4ff;
-}
-
-
 </style>
-
 
   
 {% else %}

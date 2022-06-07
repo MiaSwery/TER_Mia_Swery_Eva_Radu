@@ -269,6 +269,21 @@ select {
 
 }
 
+/* Style for the blue squares to select elements in the popups */
+.selectionPopup{
+  width: 100%;
+  width: 325px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border:1px solid #1f74ff;
+  border-radius: 15px;
+  height: 80px;
+}
+
+.selectionPopup:hover{
+  background-color: #edf4ff;
+}
+
 
 .popupCriterion{
   border:1px solid #1f74ff;
